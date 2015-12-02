@@ -13,7 +13,8 @@
 		"onCommand:extension.uploadFile",
 		"onCommand:extension.reloadSettings",
 		"onCommand:extension.createSettings",
-		"workspaceContains:.ftpconfig.json"
+		"workspaceContains:.ftpconfig.json",
+		"workspaceContains:.remote-sync.json"
 	],
 	"main": "./out/src/extension",
 	"contributes": {
