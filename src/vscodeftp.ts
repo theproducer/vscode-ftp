@@ -1,6 +1,8 @@
 var Gaze = require('gaze').Gaze;
 var glob = require('glob');
+var globule = require('globule');
 var ftpclient = require('ftp');
+var sftpclient = require('ssh2').Client;
 
 import * as vscode from 'vscode'; 
 import * as fs from 'fs';
@@ -13,6 +15,7 @@ export class ProjectSettings{
 	mode :string;
 	ignore :Array<string>;
 	watch :Array<string>;
+    port :number;
 }
 
 export class VSCodeFTP{	
@@ -50,6 +53,8 @@ export class VSCodeFTP{
 			projectsettings.username = settings.username;
 			projectsettings.password = settings.password;
 			projectsettings.target = settings.target;	
+            projectsettings.mode = settings.mode;
+            projectsettings.port = settings.port;
 			
 			//Get files to ignore
 			projectsettings.ignore = new Array<string>();
@@ -82,31 +87,74 @@ export class VSCodeFTP{
 		console.log(remotefilepath);
 		remotefilepath = this.projsettings.target + remotefilepath;
 		console.log("uploading file to: " + remotefilepath);
-		let c = new ftpclient();
-		c.on('ready', function(){
-			c.put(filepath, remotefilepath, function(err){
-				if(err){					
-					var errormessage = vscode.window.showErrorMessage("Failed to upload file " + err.message);
-				}else{
-					console.log("....upload complete!");
-					messageDisposable.dispose();
-					var successmessage = vscode.window.setStatusBarMessage("... upload complete!", 3000);
-				}				
-				c.end();
-			});
-		});
+        
+        if(this.projsettings.mode == "sftp"){     
+            let c = new sftpclient();
+            
+            c.on('ready', function(){
+                c.sftp(
+                    function(err, sftp){
+                        if(err){
+                            var errormessage = vscode.window.showErrorMessage("Failed to upload file " + err.message);
+                            sftp.end(); 
+                        }else{
+                            let readStream = fs.createReadStream(filepath);
+                            let writeStream = sftp.createWriteStream(remotefilepath);
+                            
+                            writeStream.on('close', function(){
+                                console.log("....upload complete!");
+                                messageDisposable.dispose();
+                                var successmessage = vscode.window.setStatusBarMessage("... upload complete!", 3000);
+                                sftp.end();                                
+                            });
+                            
+                            readStream.pipe(writeStream);
+                        }
+                    }
+                );
+            });
+            
+            c.on('error', function(err){
+                var errormessage = vscode.window.showErrorMessage("Failed to connect to server: " + err.message);
+            });
+            
+            c.connect({
+                "host": this.projsettings.hostname,
+                "port": this.projsettings.port,
+                "username": this.projsettings.username,
+                "password": this.projsettings.password
+            });
+        }
+        
+        if(this.projsettings.mode == "ftp"){
+            let c = new ftpclient();
+            c.on('ready', function(){
+                c.put(filepath, remotefilepath, function(err){
+                    if(err){					
+                        var errormessage = vscode.window.showErrorMessage("Failed to upload file " + err.message);
+                    }else{
+                        console.log("....upload complete!");
+                        messageDisposable.dispose();
+                        var successmessage = vscode.window.setStatusBarMessage("... upload complete!", 3000);
+                    }				
+                    c.end();
+                });
+            });
+            
+            c.on('error', function(err :any) {
+                var errormessage = vscode.window.showErrorMessage("Failed to connect to server: " + err.message);
+            });
+            c.connect({
+                host: this.projsettings.hostname,
+                user: this.projsettings.username,
+                password: this.projsettings.password
+            });
+        }
+        
 		
-		c.on('error', function(err :any) {
-			var errormessage = vscode.window.showErrorMessage("Failed to connect to server: " + err.message);
-		});
-		c.connect({
-			host: this.projsettings.hostname,
-			user: this.projsettings.username,
-			password: this.projsettings.password
-		});
 	}
 	
-	addUploadFileToQueue(filepath :string){
+	addUploadFileToQueue(filepath :string){        
 		if(this.queueduploads.indexOf(filepath) === -1){
 			this.queueduploads.push(filepath);
 		}
@@ -114,12 +162,15 @@ export class VSCodeFTP{
 	}
 	
 	checkIgnoredFiles(filename: string) {
-		filename = filename.replace("/", "");
-		this.projsettings.ignore.find(function(element, index, array) {
-			if (element == filename) {
-				return true;
-			}
-		});
+        let globarray = new Array<string>();
+        globarray.push("**/*");
+        globarray = globarray.concat(this.projsettings.ignore);
+        
+		if(globule.isMatch(globarray, filename)){
+            return false;
+        }else{
+            return true;
+        }
 	}
 	
 	processQueue(){
@@ -140,9 +191,8 @@ export class VSCodeFTP{
 	startWatchingFiles(){
 		let that = this;
 		var gaze = new Gaze();
-		gaze.on('changed', function(filepath){
-			//Add file to upload queue
-			that.addUploadFileToQueue(filepath);			
+		gaze.on('changed', function(filepath){            
+            that.addUploadFileToQueue(filepath);            
 		});
 		
 		this.projsettings.watch.forEach(function(val, index, array){

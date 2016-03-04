@@ -1,3 +1,4 @@
+"use strict";
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 var vscode = require('vscode');
@@ -18,7 +19,10 @@ function activate(context) {
         vscodeFtpCreateSettings();
     });
     var onSaveListener = function (event) {
-        client.uploadFile(event.fileName);
+        //Check if file is ignored
+        if (!client.checkIgnoredFiles(event.fileName)) {
+            client.uploadFile(event.fileName);
+        }
     };
     var onSaveDisposable = vscode.workspace.onDidSaveTextDocument(onSaveListener);
     context.subscriptions.push(disposable);
@@ -45,6 +49,7 @@ function vscodeFtpCreateSettings() {
         password: "",
         target: "",
         port: 21,
+        mode: "",
         ignore: Array(),
         watch: Array(),
         autoUploadOnSave: true
@@ -74,16 +79,21 @@ function vscodeFtpCreateSettings() {
                     });
                     remotepathThenable.then(function (value) {
                         ftpdetails.target = value;
-                        //Add some default ignores
-                        ftpdetails.ignore.push("/.*/**");
-                        ftpdetails.ignore.push("node_modules/**");
-                        ftpdetails.ignore.push(".ftpconfig.json");
-                        ftpdetails.ignore.push(".remote-sync.json");
-                        //Create the json file
-                        console.log(ftpdetails);
-                        fs.writeFile(vscode.workspace.rootPath + "/.ftpconfig.json", JSON.stringify(ftpdetails, null, 4), function () {
-                            vscodeFtpReloadSettings();
-                            vscode.window.showInformationMessage("FTP Settings file created successfully.");
+                        var modeThenable = vscode.window.showInputBox(vscode.InputBoxOptions = {
+                            prompt: "Enter the protocol (ftp or sftp)"
+                        });
+                        modeThenable.then(function (value) {
+                            ftpdetails.mode = value;
+                            //Add some default ignores
+                            ftpdetails.ignore.push("!node_modules/**");
+                            ftpdetails.ignore.push("!.ftpconfig.json");
+                            ftpdetails.ignore.push("!.remote-sync.json");
+                            //Create the json file
+                            console.log(ftpdetails);
+                            fs.writeFile(vscode.workspace.rootPath + "/.ftpconfig.json", JSON.stringify(ftpdetails, null, 4), function () {
+                                vscodeFtpReloadSettings();
+                                vscode.window.showInformationMessage("FTP Settings file created successfully.");
+                            });
                         });
                     });
                 });
