@@ -38,6 +38,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(onSaveDisposable);
 }
 
+export function deactivate(){
+    console.log("..deactivating...");
+    
+}
+
 function vscodeFtpUploadFile() {
 	if (client.projsettings != null) {
 		client.uploadFile(vscode.window.activeTextEditor.document.fileName);	
@@ -100,7 +105,7 @@ function vscodeFtpCreateSettings() {
                         
                         var modeThenable = vscode.window.showInputBox(vscode.InputBoxOptions = {
                             prompt: "Enter the protocol (ftp or sftp)"
-                        };
+                        });
                         
                         modeThenable.then(function(value: string){
                            ftpdetails.mode = value; 

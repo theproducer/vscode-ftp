@@ -30,6 +30,10 @@ function activate(context) {
     context.subscriptions.push(onSaveDisposable);
 }
 exports.activate = activate;
+function deactivate() {
+    console.log("..deactivating...");
+}
+exports.deactivate = deactivate;
 function vscodeFtpUploadFile() {
     if (client.projsettings != null) {
         client.uploadFile(vscode.window.activeTextEditor.document.fileName);
