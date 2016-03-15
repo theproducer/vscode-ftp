@@ -18,6 +18,9 @@ function activate(context) {
     var createDisposable = vscode.commands.registerCommand('extension.createSettings', function () {
         vscodeFtpCreateSettings();
     });
+    var pathDisposable = vscode.commands.registerCommand("extension.uploadPath", function () {
+        vscodeFtpUploadPath();
+    });
     var onSaveListener = function (event) {
         //Check if file is ignored
         if (!client.checkIgnoredFiles(event.fileName)) {
@@ -34,6 +37,37 @@ function deactivate() {
     console.log("..deactivating...");
 }
 exports.deactivate = deactivate;
+function vscodeFtpUploadPath() {
+    if (client.projsettings != null) {
+        var options = {
+            prompt: "Enter the path to the file or folder you want to upload (relative to this project)",
+            placeHolder: "ex.: src/images/logo.jpg"
+        };
+        var path = null;
+        var pathThenable = vscode.window.showInputBox(options);
+        pathThenable.then(function (value) {
+            path = vscode.workspace.rootPath + "/" + value;
+            fs.access(path, fs.F_OK, function (err) {
+                if (err) {
+                    vscode.window.showErrorMessage("Could not find file/directory: " + path);
+                }
+                else {
+                    //check if this is a file or directory
+                    fs.lstat(path, function (err, stats) {
+                        if (stats.isDirectory()) {
+                            vscode.window.showInformationMessage("VSCodeFTP does not yet support directory uploads");
+                        }
+                        else {
+                            if (stats.isFile()) {
+                                client.uploadFile(path);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    }
+}
 function vscodeFtpUploadFile() {
     if (client.projsettings != null) {
         client.uploadFile(vscode.window.activeTextEditor.document.fileName);

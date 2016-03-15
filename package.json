@@ -13,6 +13,7 @@
     "onCommand:extension.uploadFile",
     "onCommand:extension.reloadSettings",
     "onCommand:extension.createSettings",
+    "onCommand:extension.uploadPath",
     "workspaceContains:.ftpconfig.json",
     "workspaceContains:.remote-sync.json"
   ],
@@ -30,6 +31,10 @@
       {
         "command": "extension.createSettings",
         "title": "Create FTP Settings"
+      },
+      {
+        "command": "extension.uploadPath",
+        "title": "Upload from Project Path"
       }
     ]
   },

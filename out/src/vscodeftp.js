@@ -53,19 +53,7 @@ var VSCodeFTP = (function () {
             this.queueprocessing = false;
             //3.  If this is SFTP, start the client and open a connection            
             if (this.projsettings.mode == "sftp") {
-                this.sftpinstance = new sftpclient();
-                this.sftpinstance.connect({
-                    "host": this.projsettings.hostname,
-                    "port": this.projsettings.port,
-                    "username": this.projsettings.username,
-                    "password": this.projsettings.password
-                });
-                this.sftpinstance.on('error', function (err) {
-                    var errormessage = vscode.window.showErrorMessage("Failed to connect to server: " + err.message);
-                });
-                this.sftpinstance.on('ready', function () {
-                    vscode.window.showInformationMessage("SFTP Settings found and loaded for project.");
-                });
+                this.openSFTPConnection();
             }
             else {
                 vscode.window.showInformationMessage("FTP Settings found and loaded for project.");
@@ -81,6 +69,25 @@ var VSCodeFTP = (function () {
         if (this.sftpinstance != null) {
             this.sftpinstance.end();
         }
+    };
+    VSCodeFTP.prototype.openSFTPConnection = function () {
+        var _this = this;
+        console.log("Opening new SFTP Connection");
+        this.sftpinstance = null;
+        this.sftpinstance = new sftpclient();
+        this.sftpinstance.connect({
+            "host": this.projsettings.hostname,
+            "port": this.projsettings.port,
+            "username": this.projsettings.username,
+            "password": this.projsettings.password
+        });
+        this.sftpinstance.on('error', function (err) {
+            var errormessage = vscode.window.showErrorMessage("Failed to connect to server: " + err.message);
+        });
+        this.sftpinstance.on('ready', function () {
+            vscode.window.showInformationMessage("SFTP Settings found and loaded for project.");
+        });
+        this.sftpinstance.on('end', function () { return _this.openSFTPConnection(); });
     };
     VSCodeFTP.prototype.uploadFile = function (filepath) {
         var messageDisposable = vscode.window.setStatusBarMessage("Uploading file ...", 3000);
