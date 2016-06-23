@@ -1,56 +1,57 @@
 {
-  "name": "vscode-ftp",
-  "description": "Project FTP sync support for VSCode",
-  "version": "0.0.1",
-  "publisher": "",
-  "engines": {
-    "vscode": "^0.10.1"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onCommand:extension.uploadFile",
-    "onCommand:extension.reloadSettings",
-    "onCommand:extension.createSettings",
-    "onCommand:extension.uploadPath",
-    "workspaceContains:.ftpconfig.json",
-    "workspaceContains:.remote-sync.json"
-  ],
-  "main": "./out/src/extension",
-  "contributes": {
-    "commands": [
-      {
-        "command": "extension.uploadFile",
-        "title": "Upload Current File"
-      },
-      {
-        "command": "extension.reloadSettings",
-        "title": "Reload FTP Settings"
-      },
-      {
-        "command": "extension.createSettings",
-        "title": "Create FTP Settings"
-      },
-      {
-        "command": "extension.uploadPath",
-        "title": "Upload from Project Path"
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-    "compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
-  },
-  "devDependencies": {
-    "typescript": "^1.6.2",
-    "vscode": "0.10.x"
-  },
-  "dependencies": {
-    "ftp": "^0.3.10",
-    "gaze": "^0.5.2",
-    "glob": "^6.0.1",
-    "globule": "^0.2.0",
-    "ssh2": "^0.4.13"
-  }
+    "name": "vscode-ftp",
+    "displayName": "vscode-ftp",
+    "description": "Sync your local VSCode project and files with a similar directory on a remote FTP server",
+    "version": "0.0.1",
+    "publisher": "theproducer",
+    "engines": {
+        "vscode": "^1.0.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "workspaceContains:.ftpconfig.json",
+        "workspaceContains:.remote-sync.json",
+        "onCommand:extension.uploadFile",
+        "onCommand:extension.reloadSettings",
+        "onCommand:extension.createSettings",
+        "onCommand:extension.uploadPath"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "extension.uploadFile",
+                "title": "Upload Current File"
+            },
+            {
+                "command": "extension.reloadSettings",
+                "title": "Reload FTP Settings"
+            },
+            {
+                "command": "extension.createSettings",
+                "title": "Create FTP Settings"
+            },
+            {
+                "command": "extension.uploadPath",
+                "title": "Upload from Project Path"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+        "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install"
+    },
+    "devDependencies": {
+        "typescript": "^1.8.5",
+        "vscode": "^0.11.0"
+    },
+    "dependencies": {
+        "gaze": "^1.0.0",
+        "ftp": "^0.3.10",
+        "ssh2": "^0.5.0",
+        "globule": "^1.0.0"
+    }
 }

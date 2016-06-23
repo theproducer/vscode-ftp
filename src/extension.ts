@@ -1,17 +1,15 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode'; 
-import * as vscodeftp from './vscodeftp';
+'use strict';
+
+import * as vscode from 'vscode';
+import * as vscodeftp from './ftpclient';
 import * as fs from 'fs';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 var client = null;
 
-export function activate(context: vscode.ExtensionContext) {	
-	client = new vscodeftp.VSCodeFTP(vscode.workspace.rootPath);
-	
-	var disposable = vscode.commands.registerCommand('extension.uploadFile', () => {	
+export function activate(context: vscode.ExtensionContext) {
+    client = new vscodeftp.FtpClient(vscode.workspace.rootPath);
+
+    var disposable = vscode.commands.registerCommand('extension.uploadFile', () => {	
 		vscodeFtpUploadFile();			
 	});
 	
@@ -25,14 +23,13 @@ export function activate(context: vscode.ExtensionContext) {
     
     var pathDisposable = vscode.commands.registerCommand("extension.uploadPath", () => {
         vscodeFtpUploadPath();
-    })
-	
-	var onSaveListener = function(event) {
+    });
+
+    var onSaveListener = function(event) {
         //Check if file is ignored
         if(!client.checkIgnoredFiles(event.fileName)){
             client.uploadFile(event.fileName);
-        }
-		
+        }		
 	}
 	
 	var onSaveDisposable = vscode.workspace.onDidSaveTextDocument(onSaveListener);
@@ -42,13 +39,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(onSaveDisposable);
 }
 
-export function deactivate(){
-    console.log("..deactivating...");
-    
+// this method is called when your extension is deactivated
+export function deactivate() {
 }
 
 function vscodeFtpUploadPath(){
-    if(client.projsettings != null){
+    if(client.clientsettings != null){
         var options: vscode.InputBoxOptions = {
             prompt: "Enter the path to the file or folder you want to upload (relative to this project)",
             placeHolder: "ex.: src/images/logo.jpg"
@@ -57,23 +53,25 @@ function vscodeFtpUploadPath(){
         var path = null;
         var pathThenable = vscode.window.showInputBox(options);
         pathThenable.then(function(value: string){
-            path = vscode.workspace.rootPath + "/" + value;
-            fs.access(path, fs.F_OK, function(err){
-                if(err){
-                    vscode.window.showErrorMessage("Could not find file/directory: " + path);
-                }else{
-                    //check if this is a file or directory
-                    fs.lstat(path, function(err, stats){
-                        if(stats.isDirectory()){
-                            vscode.window.showInformationMessage("VSCodeFTP does not yet support directory uploads");
-                        }else{
-                            if(stats.isFile()){
-                                client.uploadFile(path);            
-                            }
-                        }
-                    });                    
-                }
-            });            
+			if(value !== undefined){
+				path = vscode.workspace.rootPath + "/" + value;
+				fs.access(path, fs.F_OK, function(err){
+					if(err){
+						vscode.window.showErrorMessage("Could not find file/directory: " + path);
+					}else{
+						//check if this is a file or directory
+						fs.lstat(path, function(err, stats){
+							if(stats.isDirectory()){
+								vscode.window.showInformationMessage("VSCodeFTP does not yet support directory uploads");
+							}else{
+								if(stats.isFile()){
+									client.uploadFile(path);            
+								}
+							}
+						});                    
+					}
+				}); 
+			}                       
         });
     }
 }
@@ -165,8 +163,7 @@ function vscodeFtpCreateSettings() {
 	});
 }
 
-
 function vscodeFtpReloadSettings() {
 	client = null;
-	client = new vscodeftp.VSCodeFTP(vscode.workspace.rootPath);
+	client = new vscodeftp.FtpClient(vscode.workspace.rootPath);
 }

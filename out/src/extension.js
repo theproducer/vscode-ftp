@@ -1,14 +1,10 @@
-"use strict";
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+'use strict';
 var vscode = require('vscode');
-var vscodeftp = require('./vscodeftp');
+var vscodeftp = require('./ftpclient');
 var fs = require('fs');
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 var client = null;
 function activate(context) {
-    client = new vscodeftp.VSCodeFTP(vscode.workspace.rootPath);
+    client = new vscodeftp.FtpClient(vscode.workspace.rootPath);
     var disposable = vscode.commands.registerCommand('extension.uploadFile', function () {
         vscodeFtpUploadFile();
     });
@@ -33,12 +29,12 @@ function activate(context) {
     context.subscriptions.push(onSaveDisposable);
 }
 exports.activate = activate;
+// this method is called when your extension is deactivated
 function deactivate() {
-    console.log("..deactivating...");
 }
 exports.deactivate = deactivate;
 function vscodeFtpUploadPath() {
-    if (client.projsettings != null) {
+    if (client.clientsettings != null) {
         var options = {
             prompt: "Enter the path to the file or folder you want to upload (relative to this project)",
             placeHolder: "ex.: src/images/logo.jpg"
@@ -46,25 +42,27 @@ function vscodeFtpUploadPath() {
         var path = null;
         var pathThenable = vscode.window.showInputBox(options);
         pathThenable.then(function (value) {
-            path = vscode.workspace.rootPath + "/" + value;
-            fs.access(path, fs.F_OK, function (err) {
-                if (err) {
-                    vscode.window.showErrorMessage("Could not find file/directory: " + path);
-                }
-                else {
-                    //check if this is a file or directory
-                    fs.lstat(path, function (err, stats) {
-                        if (stats.isDirectory()) {
-                            vscode.window.showInformationMessage("VSCodeFTP does not yet support directory uploads");
-                        }
-                        else {
-                            if (stats.isFile()) {
-                                client.uploadFile(path);
+            if (value !== undefined) {
+                path = vscode.workspace.rootPath + "/" + value;
+                fs.access(path, fs.F_OK, function (err) {
+                    if (err) {
+                        vscode.window.showErrorMessage("Could not find file/directory: " + path);
+                    }
+                    else {
+                        //check if this is a file or directory
+                        fs.lstat(path, function (err, stats) {
+                            if (stats.isDirectory()) {
+                                vscode.window.showInformationMessage("VSCodeFTP does not yet support directory uploads");
                             }
-                        }
-                    });
-                }
-            });
+                            else {
+                                if (stats.isFile()) {
+                                    client.uploadFile(path);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         });
     }
 }
@@ -141,6 +139,6 @@ function vscodeFtpCreateSettings() {
 }
 function vscodeFtpReloadSettings() {
     client = null;
-    client = new vscodeftp.VSCodeFTP(vscode.workspace.rootPath);
+    client = new vscodeftp.FtpClient(vscode.workspace.rootPath);
 }
 //# sourceMappingURL=extension.js.map
