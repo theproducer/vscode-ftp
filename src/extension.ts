@@ -9,8 +9,9 @@ var client = null;
 export function activate(context: vscode.ExtensionContext) {
     client = new vscodeftp.FtpClient(vscode.workspace.rootPath);
 
-    var disposable = vscode.commands.registerCommand('extension.uploadFile', () => {	
-		vscodeFtpUploadFile();			
+    var disposable = vscode.commands.registerCommand('extension.uploadFile', (fileurl) => {
+		console.log(fileurl);	
+		vscodeFtpUploadFile(fileurl);			
 	});
 	
 	var reloadDisposable = vscode.commands.registerCommand('extension.reloadSettings', () => {
@@ -76,9 +77,13 @@ function vscodeFtpUploadPath(){
     }
 }
 
-function vscodeFtpUploadFile() {
-	if (client.projsettings != null) {
-		client.uploadFile(vscode.window.activeTextEditor.document.fileName);	
+function vscodeFtpUploadFile(fileurl) {
+	if (client.clientsettings != null) {
+		if(fileurl !== undefined){
+			client.uploadFile(fileurl.path);
+		}else{
+			client.uploadFile(vscode.window.activeTextEditor.document.fileName);
+		}			
 	} else {
 		vscodeFtpReloadSettings();
 	}
